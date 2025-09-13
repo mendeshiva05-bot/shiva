@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus AI Assistant</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <header class="header">
+            <div class="status-indicator" id="statusIndicator"></div>
+            <div class="header-content">
+                <i class="fas fa-graduation-cap header-icon"></i>
+                <h1>Campus AI Assistant</h1>
+                <p>Your intelligent guide to campus life</p>
+            </div>
+        </header>
+        
+        <!-- Chat Container -->
+        <div class="chat-container">
+            <div class="messages" id="messages">
+                <div class="welcome-section">
+                    <div class="bot-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="welcome-text">
+                        <h3>Welcome to Campus AI Assistant! 👋</h3>
+                        <p>I'm here to help you with all your campus queries. Try asking about:</p>
+                    </div>
+                    <div class="quick-actions">
+                        <button class="quick-btn" onclick="sendQuickMessage('What are the library hours today?')">
+                            <i class="fas fa-book"></i> Library Hours
+                        </button>
+                        <button class="quick-btn" onclick="sendQuickMessage('Show me today\'s dining menu')">
+                            <i class="fas fa-utensils"></i> Dining Menu
+                        </button>
+                        <button class="quick-btn" onclick="sendQuickMessage('Where is the registrar office?')">
+                            <i class="fas fa-building"></i> Registrar Office
+                        </button>
+                        <button class="quick-btn" onclick="sendQuickMessage('What campus facilities are available?')">
+                            <i class="fas fa-university"></i> Facilities
+                        </button>
+                        <button class="quick-btn" onclick="sendQuickMessage('Tell me about student services')">
+                            <i class="fas fa-users"></i> Student Services
+                        </button>
+                        <button class="quick-btn" onclick="sendQuickMessage('What are the parking rules?')">
+                            <i class="fas fa-car"></i> Parking Info
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="typing" id="typing">
+                    <div class="bot-avatar small">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="typing-content">
+                        <span>Assistant is thinking</span>
+                        <div class="typing-dots">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Input Section -->
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <input 
+                        type="text" 
+                        class="input-field" 
+                        id="messageInput" 
+                        placeholder="Ask me anything about campus..."
+                        autocomplete="off"
+                        maxlength="500"
+                    >
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                <div class="input-footer">
+                    <span class="char-count" id="charCount">0/500</span>
+                    <span class="powered-by">Powered by Campus AI</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="database.js"></script>
+    <script src="ai-engine.js"></script>
+    <script src="app.js"></script>
+
+    <style>
+        /* CSS Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            height: 95vh;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(15px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #f39c12;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+            font-weight: 300;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            width: 12px;
+            height: 12px;
+            background: #4caf50;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            scroll-behavior: smooth;
+        }
+
+        .messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .messages::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .welcome-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .welcome-text {
+            margin: 20px 0;
+            color: #2c3e50;
+        }
+
+        .welcome-text h3 {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+        }
+
+        .welcome-text p {
+            color: #6c757d;
+            font-size: 0.95rem;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .quick-btn {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border: 2px solid transparent;
+            padding: 12px 16px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .quick-btn:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .quick-btn i {
+            font-size: 1rem;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            max-width: 80%;
+            animation: fadeInUp 0.4s ease;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .bot-message {
+            align-self: flex-start;
+        }
+
+        .message-content {
+            padding: 15px 20px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+
+        .user-message .message-content {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .bot-message .message-content {
+            background: #f8f9fa;
+            color: #2c3e50;
+            border: 1px solid #e9ecef;
+            border-bottom-left-radius: 4px;
+        }
+
+        .bot-avatar, .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .bot-avatar {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .bot-avatar.small {
+            width: 32px;
+            height: 32px;
+            font-size: 1rem;
+        }
+
+        .user-avatar {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .typing {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .typing-content {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 15px 20px;
+            border-radius: 18px;
+            border-bottom-left-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .typing-content span {
+            color: #6c757d;
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 3px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: #6c757d;
+            border-radius: 50%;
+            animation: typingDot 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        .input-container {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .input-field:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .input-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .info-card strong {
+            color: #1565c0;
+        }
+
+        .success-card {
+            background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+            border-left: 4px solid #4caf50;
+        }
+
+        .warning-card {
+            background: linear-gradient(135deg, #fff3e0, #ffcc02);
+            border-left: 4px solid #ff9800;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes typingDot {
+            0%, 60%, 100% { 
+                transform: scale(0.8);
+                opacity: 0.5; 
+            }
+            30% { 
+                transform: scale(1.2);
+                opacity: 1; 
+            }
+        }
+
+        @keyframes pulse {
+            0% { 
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% { 
+                opacity: 0.5;
+                transform: scale(1.1);
+            }
+            100% { 
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                height: 100vh;
+                border-radius: 0;
+                margin: 0;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .messages {
+                padding: 15px;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+
+            .quick-actions {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 8px;
+            }
+
+            .quick-btn {
+                padding: 10px 12px;
+                font-size: 0.8rem;
+            }
+
+            .input-container {
+                padding: 15px;
+            }
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            .container {
+                background: rgba(30, 30, 30, 0.95);
+            }
+
+            .bot-message .message-content {
+                background: #2c3e50;
+                color: #ecf0f1;
+                border-color: #34495e;
+            }
+
+            .input-field {
+                background: #34495e;
+                border-color: #4a5568;
+                color: #ecf0f1;
+            }
+
+            .input-container {
+                background: #2c3e50;
+                border-color: #34495e;
+            }
+
+            .welcome-text h3 {
+                color: #ecf0f1;
+            }
+        }
+    </style>
+
+    <script>
+        // Campus Database
+        const campusDatabase = {
+            schedules: {
+                library: {
+                    weekday: "7:00 AM - 11:00 PM",
+                    weekend: "9:00 AM - 9:00 PM",
+                    finals: "24/7 during finals week",
+                    holidays: "Closed on major holidays",
+                    summer: "8:00 AM - 8:00 PM"
+                },
+                dining: {
+                    main_cafeteria: "7:00 AM - 10:00 PM",
+                    food_court: "11:00 AM - 8:00 PM",
+                    coffee_shop: "6:30 AM - 6:00 PM",
+                    late_night: "8:00 PM - 1:00 AM (Thu-Sat)"
+                },
+                administrative: {
+                    registrar: "Monday-Friday 8:00 AM - 5:00 PM",
+                    financial_aid: "Monday-Friday 8:30 AM - 4:30 PM",
+                    student_services: "Monday-Friday 9:00 AM - 5:00 PM",
+                    admissions: "Monday-Friday 8:00 AM - 5:00 PM"
+                },
+                fitness: {
+                    gym: "5:00 AM - 11:00 PM",
+                    pool: "6:00 AM - 10:00 PM",
+                    courts: "6:00 AM - 11:00 PM"
+                }
+            },
+            facilities: {
+                academic: [
+                    {
+                        name: "Central Library",
+                        description: "5 floors, study rooms, computer lab, research center",
+                        location: "Main Campus, Building A",
+                        capacity: "2000 students"
+                    },
+                    {
+                        name: "Science Complex",
+                        description: "Chemistry, Biology, Physics labs with modern equipment",
+                        location: "North Campus, Buildings B1-B3",
+                        features: ["Research Labs", "Greenhouse", "Observatory"]
+                    },
+                    {
+                        name: "Engineering Hall",
+                        description: "Workshops, CAD lab, project rooms, 3D printing facility",
+                        location: "East Campus, Building C",
+                        features: ["Maker Space", "Clean Room", "Testing Labs"]
+                    },
+                    {
+                        name: "Business Center",
+                        description: "Meeting rooms, presentation halls, trading floor simulator",
+                        location: "South Campus, Building D",
+                        features: ["Conference Rooms", "Video Conferencing", "Bloomberg Terminal"]
+                    },
+                    {
+                        name: "Arts Building",
+                        description: "Studios, gallery, performance spaces, dark rooms",
+                        location: "West Campus, Building E",
+                        features: ["Art Gallery", "Theater", "Music Rooms", "Dance Studio"]
+                    }
+                ],
+                recreational: [
+                    {
+                        name: "Fitness Center",
+                        description: "Full gym, cardio equipment, free weights, group classes",
+                        location: "Recreation Complex, Level 1",
+                        amenities: ["Pool", "Sauna", "Rock Climbing Wall"]
+                    },
+                    {
+                        name: "Student Union",
+                        description: "Lounges, game room, meeting spaces, food court",
+                        location: "Center Campus, Main Building",
+                        features: ["Study Spaces", "Event Halls", "Bookstore", "ATMs"]
+                    },
+                    {
+                        name: "Sports Complex",
+                        description: "Stadium, track, tennis courts, soccer fields",
+                        location: "Athletic Campus",
+                        capacity: "15,000 for football games"
+                    }
+                ],
+                residential: [
+                    {
+                        name: "North Campus Dorms",
+                        description: "Traditional residence halls",
+                        capacity: "1200 students",
+                        features: ["Common Areas", "Study Lounges", "Laundry Facilities"]
+                    },
+                    {
+                        name: "South Campus Apartments",
+                        description: "Suite-style living for upperclassmen",
+                        capacity: "800 students",
+                        features: ["Kitchen Facilities", "Private Bathrooms", "Parking"]
+                    },
+                    {
+                        name: "Graduate Housing",
+                        description: "Apartments for graduate students and families",
+                        capacity: "400 units",
+                        features: ["Family Units", "Pet-Friendly", "Furnished Options"]
+                    }
+                ]
+            },
+            dining: {
+                locations: [
+                    {
+                        name: "Main Cafeteria",
+                        type: "All-you-can-eat dining",
+                        hours: "7:00 AM - 10:00 PM",
+                        features: ["International Cuisine", "Salad Bar", "Grill Station", "Vegetarian Options"]
+                    },
+                    {
+                        name: "Food Court",
+                        type: "Various vendors and cuisines",
+                        hours: "11:00 AM - 8:00 PM",
+                        vendors: ["Pizza", "Asian Cuisine", "Mexican Food", "Sandwiches", "Coffee"]
+                    },
+                    {
+                        name: "Campus Coffee Shop",
+                        type: "Coffee, pastries, light meals",
+                        hours: "6:30 AM - 6:00 PM",
+                        features: ["Fair Trade Coffee", "Fresh Pastries", "Study Space", "WiFi"]
+                    },
+                    {
+                        name: "Late Night Dining",
+                        type: "Extended hours dining",
+                        hours: "8:00 PM - 1:00 AM (Thu-Sat)",
+                        menu: ["Pizza", "Wings", "Snacks", "Energy Drinks"]
+                    }
+                ],
+                meal_plans: [
+                    {
+                        name: "Unlimited Plan",
+                        price: "$2,400/semester",
+                        description: "Unlimited access to main cafeteria + $200 dining dollars",
+                        best_for: "Students who eat all meals on campus"
+                    },
+                    {
+                        name: "14 Meals/Week",
+                        price: "$1,800/semester",
+                        description: "14 meals per week + $300 dining dollars",
+                        best_for: "Most residential students"
+                    },
+                    {
+                        name: "10 Meals/Week",
+                        price: "$1,400/semester",
+                        description: "10 meals per week + $400 dining dollars",
+                        best_for: "Light eaters or partial meal plan users"
+                    },
+                    {
+                        name: "Commuter Plan",
+                        price: "$800/semester",
+                        description: "5 meals per week + $500 dining dollars",
+                        best_for: "Commuter students"
+                    }
+                ],
+                daily_menu: {
+                    breakfast: [
+                        "Pancakes with maple syrup",
+                        "Scrambled eggs and bacon",
+                        "Fresh fruit bowl",
+                        "Oatmeal with toppings",
+                        "Bagels with cream cheese",
+                        "Coffee and tea"
+                    ],
+                    lunch: [
+                        "Grilled chicken breast",
+                        "Vegetarian pasta primavera",
+                        "Caesar salad",
+                        "Tomato basil soup",
+                        "Turkey club sandwich",
+                        "Fresh juice bar"
+                    ],
+                    dinner: [
+                        "Beef stir fry",
+                        "Grilled salmon",
+                        "Quinoa Buddha bowl",
+                        "Pizza margherita",
+                        "Ice cream sundae bar",
+                        "Specialty beverages"
+                    ]
+                }
+            },
+            library: {
+                services: [
+                    "Book lending and returns",
+                    "Research assistance and consultation",
+                    "Computer and printing services",
+                    "Group study rooms (reservable online)",
+                    "Quiet study areas and zones",
+                    "Interlibrary loan services",
+                    "Writing center and tutoring",
+                    "Digital media lab and equipment",
+                    "Thesis and dissertation support",
+                    "Course reserves and textbooks"
+                ],
+                floors: {
+                    "Ground Floor": "Circulation desk, reference collection, help desk, cafe",
+                    "First Floor": "Popular books, magazines, newspapers, collaborative study areas",
+                    "Second Floor": "Academic collections, quiet study zones, computer lab",
+                    "Third Floor": "Special collections, archives, graduate study rooms",
+                    "Fourth Floor": "Silent study areas, individual study carrels, research rooms"
+                },
+                resources: {
+                    "Books": "Over 500,000 physical books",
+                    "E-books": "200,000+ digital titles",
+                    "Databases": "150+ academic databases",
+                    "Computers": "200 public computers",
+                    "Study Rooms": "50 group study rooms",
+                    "Tutoring": "Free tutoring services available"
+                }
+            },
+            administrative: {
+                registrar: {
+                    location: "Administration Building, Room 150",
+                    services: [
+                        "Course enrollment and registration",
+                        "Official transcripts",
+                        "Degree verification and certification",
+                        "Grade changes and academic records",
+                        "Graduation application processing",
+                        "Transfer credit evaluation"
+                    ],
+                    contact: {
+                        phone: "(555) 123-4567",
+                        email: "registrar@campus.edu",
+                        website: "www.campus.edu/registrar"
+                    }
+                },
+                financial_aid: {
+                    location: "Student Services Building, Room 200",
+                    services: [
+                        "FAFSA assistance and processing",
+                        "Scholarship applications and awards",
+                        "Student loan counseling",
+                        "Work-study program placement",
+                        "Emergency financial assistance",
+                        "Financial literacy workshops"
+                    ],
+                    contact: {
+                        phone: "(555) 123-4568",
+                        email: "finaid@campus.edu",
+                        website: "www.campus.edu/financial-aid"
+                    }
+                },
+                student_services: {
+                    location: "Student Union, Second Floor",
+                    services: [
+                        "Student ID card services",
+                        "Parking permits and violations",
+                        "Campus event planning support",
+                        "Student organization registration",
+                        "Lost and found services",
+                        "Campus tours and orientation"
+                    ],
+                    contact: {
+                        phone: "(555) 123-4569",
+                        email: "studentservices@campus.edu",
+                        website: "www.campus.edu/student-services"
+                    }
+                }
+            },
+            parking: {
+                zones: [
+                    {
+                        name: "Student Parking",
+                        color: "Blue",
+                        cost: "$200/semester",
+                        locations: ["North Lot", "South Lot", "East Parking Garage"]
+                    },
+                    {
+                        name: "Faculty/Staff Parking",
+                        color: "Red",
+                        cost: "$400/year",
+                        locations: ["Administration Lot", "Academic Building Lots"]
+                    },
+                    {
+                        name: "Visitor Parking",
+                        color: "Green",
+                        cost: "$5/day",
+                        locations: ["Visitor Center", "Main Entrance Lot"]
+                    }
+                ],
+                rules: [
+                    "All vehicles must display valid parking permits",
+                    "Overnight parking requires special permission",
+                    "Handicap parking available with proper documentation",
+                    "Motorcycle parking available in designated areas",
+                    "Parking violations result in fines ($25-$100)"
+                ]
+            }
+        };
+
+        // AI Engine
+        class CampusAI {
+            constructor() {
+                this.context = [];
+                this.setupEventListeners();
+                this.initializeChat();
+            }
+
+            setupEventListeners() {
+                const input = document.getElementById('messageInput');
+                const sendBtn = document.getElementById('sendBtn');
+
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+
+                input.addEventListener('input', (e) => {
+                    const charCount = document.getElementById('charCount');
+                    charCount.textContent = `${e.target.value.length}/500`;
+                    
+                    sendBtn.disabled = e.target.value.trim().length === 0;
+                });
+            }
+
+            initializeChat() {
+                // Set status to online
+                const statusIndicator = document.getElementById('statusIndicator');
+                statusIndicator.style.background = '#4caf50';
+            }
+
+            sendMessage(message = null) {
+                const input = document.getElementById('messageInput');
+                const userMessage = message || input.value.trim();
+                
+                if (!userMessage) return;
+                
+                this.addMessage('user', userMessage);
+                input.value = '';
+                document.getElementById('charCount').textContent = '0/500';
+                document.getElementById('sendBtn').disabled = true;
+                
+                this.showTyping();
+                
+                setTimeout(() => {
+                    const response = this.generateResponse(userMessage);
+                    this.hideTyping();
+                    this.addMessage('bot', response);
+                }, Math.random() * 1000 + 1000); // Random delay for realism
+            }
+
+            addMessage(sender, content) {
+                const messagesContainer = document.getElementById('messages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}-message`;
+                
+                const avatarDiv = document.createElement('div');
+                avatarDiv.className = `${sender}-avatar`;
+                avatarDiv.innerHTML = sender === 'user' ? 
+                    '<i class="fas fa-user"></i>' : 
+                    '<i class="fas fa-robot"></i>';
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                contentDiv.innerHTML = content }}
